@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://esquema-canonico-soa.vercel.app/api/contrato",
+  "title": "Cliente canónico v1",
+  "description": "Modelo común con el que todos los sistemas intercambian datos de clientes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "idCliente",
+    "tipoDocumento",
+    "numeroDocumento",
+    "nombreCompleto",
+    "correo",
+    "fechaRegistro",
+    "sistemaOrigen"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["1.0"] },
+    "idCliente": { "type": "string", "minLength": 3, "maxLength": 40 },
+    "tipoDocumento": { "type": "string", "enum": ["CC", "CE", "NIT", "PA", "TI"] },
+    "numeroDocumento": { "type": "string", "pattern": "^[0-9A-Z-]{5,20}$" },
+    "nombreCompleto": { "type": "string", "minLength": 3, "maxLength": 120 },
+    "correo": { "type": "string", "format": "email" },
+    "telefono": { "type": "string", "pattern": "^\\+57[0-9]{10}$" },
+    "fechaRegistro": { "type": "string", "format": "date" },
+    "sistemaOrigen": { "type": "string", "enum": ["ventas", "crm", "facturacion"] }
+  }
+}

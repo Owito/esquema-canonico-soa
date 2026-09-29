@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Esquema canónico · Cliente v1</title>
+<meta name="description" content="Demostración del patrón SOA Canonical Schema: tres sistemas con formatos distintos convertidos a un único modelo de cliente.">
+<style>
+  :root {
+    --fondo: #f5f6f8; --panel: #ffffff; --texto: #1c2430; --suave: #5b6675; --borde: #d9dee5;
+    --acento: #1f5fbf; --acento-texto: #ffffff; --ok: #1b7f4b; --ok-fondo: #e6f4ec;
+    --error: #b3261e; --error-fondo: #fbeaea; --codigo: #f0f2f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fondo: #12161c; --panel: #1b2129; --texto: #e6e9ee; --suave: #9aa4b2; --borde: #2e3743;
+      --acento: #6ea2ff; --acento-texto: #0b1220; --ok: #58c48b; --ok-fondo: #15291f;
+      --error: #ff8a80; --error-fondo: #2e1a1a; --codigo: #141a21;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--texto);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1120px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  .bajada { color: var(--suave); margin: 0 0 20px; max-width: 70ch; }
+  .flujo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px;
+    font-size: .9rem; }
+  .flujo span { background: var(--panel); border: 1px solid var(--borde); border-radius: 6px; padding: 4px 10px; }
+  .flujo .centro { border-color: var(--acento); color: var(--acento); font-weight: 600; }
+  .rejilla { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 820px) { .rejilla { grid-template-columns: 1fr; } }
+  section { background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 16px; }
+  h2 { font-size: 1.05rem; margin: 0 0 12px; }
+  fieldset { border: 0; padding: 0; margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+  legend { font-size: .9rem; color: var(--suave); margin-bottom: 6px; }
+  .origen input { position: absolute; opacity: 0; }
+  .origen label { display: inline-block; padding: 6px 12px; border: 1px solid var(--borde);
+    border-radius: 999px; cursor: pointer; font-size: .9rem; }
+  .origen input:checked + label { background: var(--acento); color: var(--acento-texto); border-color: var(--acento); }
+  .origen input:focus-visible + label { outline: 3px solid var(--acento); outline-offset: 2px; }
+  .ayuda { font-size: .85rem; color: var(--suave); margin: 0 0 8px; min-height: 1.3em; }
+  textarea, pre { width: 100%; font: 13px/1.5 ui-monospace, "Cascadia Code", Consolas, monospace;
+    background: var(--codigo); color: var(--texto); border: 1px solid var(--borde); border-radius: 8px; padding: 12px; }
+  textarea { min-height: 280px; resize: vertical; }
+  pre { min-height: 280px; margin: 0; white-space: pre-wrap; word-break: break-word; }
+  .acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--acento); cursor: pointer; }
+  .primario { background: var(--acento); color: var(--acento-texto); }
+  .secundario { background: transparent; color: var(--acento); }
+  button:focus-visible { outline: 3px solid var(--acento); outline-offset: 2px; }
+  .estado { display: inline-block; font-size: .85rem; font-weight: 600; padding: 2px 10px; border-radius: 999px; margin-bottom: 8px; }
+  .estado.ok { background: var(--ok-fondo); color: var(--ok); }
+  .estado.error { background: var(--error-fondo); color: var(--error); }
+  .estado.espera { background: var(--codigo); color: var(--suave); }
+  footer { margin-top: 20px; font-size: .9rem; color: var(--suave); }
+  footer a { color: var(--acento); }
+  footer ul { padding-left: 18px; margin: 6px 0 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Esquema canónico · Cliente v1</h1>
+  <p class="bajada">Tres sistemas describen al mismo cliente con estructuras, nombres de atributos y formatos distintos.
+    El servicio de transformación los convierte a un único modelo común y lo valida contra un contrato publicado
+    aparte de la implementación (patrones <strong>Canonical Schema</strong> y <strong>Decoupled Contract</strong>).</p>
+
+  <div class="flujo" aria-label="Flujo de la solución">
+    <span>Ventas · JSON</span><span>CRM · XML</span><span>Facturación · JSON</span>
+    <span aria-hidden="true">→</span><span class="centro">Servicio de transformación</span>
+    <span aria-hidden="true">→</span><span>Cliente canónico v1</span>
+  </div>
+
+  <div class="rejilla">
+    <section aria-labelledby="t-entrada">
+      <h2 id="t-entrada">1. Mensaje del sistema de origen</h2>
+      <fieldset class="origen">
+        <legend>Sistema de origen</legend>
+        <input type="radio" name="origen" id="o-ventas" value="ventas" checked><label for="o-ventas">Ventas</label>
+        <input type="radio" name="origen" id="o-crm" value="crm"><label for="o-crm">CRM</label>
+        <input type="radio" name="origen" id="o-facturacion" value="facturacion"><label for="o-facturacion">Facturación</label>
+      </fieldset>
+      <p class="ayuda" id="ayuda"></p>
+      <label for="entrada" class="ayuda" style="display:block">Cuerpo del mensaje (puede editarlo)</label>
+      <textarea id="entrada" spellcheck="false"></textarea>
+      <div class="acciones">
+        <button class="primario" id="transformar">Transformar al esquema canónico</button>
+        <button class="secundario" id="errores">Probar con datos inválidos</button>
+      </div>
+    </section>
+
+    <section aria-labelledby="t-salida">
+      <h2 id="t-salida">2. Respuesta del servicio</h2>
+      <span class="estado espera" id="estado" role="status">Sin enviar</span>
+      <pre id="salida" aria-live="polite">Elija un sistema y pulse «Transformar al esquema canónico».</pre>
+    </section>
+  </div>
+
+  <footer>
+    <strong>Recursos del servicio</strong>
+    <ul>
+      <li><a href="/api/contrato" target="_blank" rel="noopener">Contrato Cliente canónico v1 (JSON Schema)</a></li>
+      <li><a href="/api/registro" target="_blank" rel="noopener">Registro de servicios</a></li>
+      <li><a href="/api/salud" target="_blank" rel="noopener">Estado del servicio</a></li>
+      <li><a href="https://github.com/Owito/esquema-canonico-soa" target="_blank" rel="noopener">Código fuente en GitHub</a></li>
+    </ul>
+  </footer>
+</main>
+<script>
+  const DESCRIPCIONES = {
+    ventas: 'JSON con nombres en snake_case, documento con puntos y fecha DD/MM/AAAA.',
+    crm: 'XML con nombres y apellidos separados y tipo de documento como atributo.',
+    facturacion: 'JSON en inglés con el documento anidado.',
+  };
+  const entrada = document.getElementById('entrada');
+  const salida = document.getElementById('salida');
+  const estado = document.getElementById('estado');
+  const ayuda = document.getElementById('ayuda');
+  let ejemplos = {};
+
+  const origenActual = () => document.querySelector('input[name="origen"]:checked').value;
+
+  function mostrarEjemplo() {
+    const o = origenActual();
+    entrada.value = ejemplos[o] ?? '';
+    ayuda.textContent = DESCRIPCIONES[o];
+  }
+
+  function pintarEstado(clase, texto) {
+    estado.className = 'estado ' + clase;
+    estado.textContent = texto;
+  }
+
+  async function transformar() {
+    pintarEstado('espera', 'Enviando…');
+    try {
+      const r = await fetch('/api/transformar?origen=' + encodeURIComponent(origenActual()), {
+        method: 'POST', body: entrada.value,
+      });
+      const cuerpo = await r.json();
+      const titulos = { 200: '200 · Cumple el contrato', 400: '400 · Mensaje ilegible', 422: '422 · No cumple el contrato' };
+      pintarEstado(r.ok ? 'ok' : 'error', titulos[r.status] ?? String(r.status));
+      salida.textContent = JSON.stringify(cuerpo, null, 2);
+    } catch (e) {
+      pintarEstado('error', 'Sin conexión con el servicio');
+      salida.textContent = String(e);
+    }
+  }
+
+  document.querySelectorAll('input[name="origen"]').forEach((i) => i.addEventListener('change', mostrarEjemplo));
+  document.getElementById('transformar').addEventListener('click', transformar);
+  document.getElementById('errores').addEventListener('click', () => {
+    document.getElementById('o-ventas').checked = true;
+    ayuda.textContent = DESCRIPCIONES.ventas;
+    entrada.value = ejemplos.conErrores;
+    transformar();
+  });
+
+  fetch('/api/ejemplos').then((r) => r.json()).then((e) => { ejemplos = e; mostrarEjemplo(); });
+</script>
+</body>
+</html>

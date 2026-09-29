@@ -1,0 +1,14 @@
+{
+  "name": "esquema-canonico-soa",
+  "version": "1.0.0",
+  "description": "Servicio de transformación al esquema canónico de Cliente (patrones SOA Canonical Schema y Decoupled Contract).",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}
