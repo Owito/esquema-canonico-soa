@@ -3,7 +3,7 @@ import { adaptadores } from './adaptadores.js';
 import { VERSION_CONTRATO } from './servicio.js';
 
 export const registro = {
-  actualizado: '2026-09-28',
+  actualizado: '2026-10-10',
   servicios: [
     {
       nombre: 'transformacion-cliente',
@@ -11,6 +11,7 @@ export const registro = {
       proveedor: 'Equipo de integración',
       version: '1.0.0',
       contrato: { nombre: 'Cliente canónico v1', version: VERSION_CONTRATO, ubicacion: '/api/contrato' },
+      interfaz: { formato: 'OpenAPI 3.1', ubicacion: '/api/openapi' },
       ubicacion: '/api/transformar',
       operaciones: [
         {
@@ -35,6 +36,14 @@ export const registro = {
       version: VERSION_CONTRATO,
       ubicacion: '/api/contrato',
       operaciones: [{ metodo: 'GET', ruta: '/api/contrato', salida: 'application/schema+json' }],
+    },
+    {
+      nombre: 'contrato-interfaz',
+      proposito: 'Publicar el contrato de la interfaz REST (OpenAPI 3.1), separado de la implementación',
+      proveedor: 'Equipo de integración',
+      version: '1.0.0',
+      ubicacion: '/api/openapi',
+      operaciones: [{ metodo: 'GET', ruta: '/api/openapi', salida: 'application/yaml' }],
     },
     {
       nombre: 'salud',

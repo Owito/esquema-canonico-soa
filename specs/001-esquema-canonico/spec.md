@@ -25,6 +25,10 @@ Contract**).
 - **R7.** `GET /api/salud` responde `200` con el estado del servicio.
 - **R8.** La interfaz web permite elegir el sistema de origen, editar un ejemplo, transformarlo y
   ver la respuesta canónica o los errores.
+- **R9.** `GET /api/openapi` publica el contrato de la interfaz en OpenAPI 3.1 (operaciones,
+  parámetros, formatos y respuestas de cada ruta). Es un archivo aparte de la implementación,
+  `contrato/openapi.v1.yaml`, que referencia el contrato de datos por su ubicación publicada en
+  lugar de copiarlo, y describe exactamente las rutas que existen en `api/`.
 
 ## Restricciones
 
@@ -54,5 +58,8 @@ Contract**).
 - **CA6** Dado un XML mal formado para el CRM, cuando se transforma, entonces la respuesta es `400`.
 - **CA7** El contrato publicado en `/api/contrato` es el mismo archivo que usa el validador.
 - **CA8** El registro lista el servicio de transformación con su versión y sus operaciones.
+- **CA9** El contrato de la interfaz publicado en `/api/openapi` es el mismo archivo
+  `contrato/openapi.v1.yaml`, declara OpenAPI 3.1 y describe una ruta por cada función de `api/`,
+  ni una más ni una menos.
 
 Cada criterio tiene su prueba en `test/`.
