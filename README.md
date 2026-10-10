@@ -32,9 +32,12 @@ Facturación ───┘         │            ▲
 
 - **Canonical Schema.** Cada sistema tiene un adaptador que lee *su* formato y lo entrega en el
   modelo común `Cliente canónico v1`. Ningún sistema necesita conocer el formato de los demás.
-- **Decoupled Contract.** El contrato vive aparte de la implementación, en
-  [`contrato/cliente-canonico.v1.schema.json`](contrato/cliente-canonico.v1.schema.json), y se
-  publica en `/api/contrato`. El validador lee ese archivo; no hay reglas duplicadas en el código.
+- **Decoupled Contract.** Los contratos viven aparte de la implementación. El de datos está en
+  [`contrato/cliente-canonico.v1.schema.json`](contrato/cliente-canonico.v1.schema.json) y se
+  publica en `/api/contrato`; el validador lee ese archivo, no hay reglas duplicadas en el código.
+  El de la interfaz REST está en [`contrato/openapi.v1.yaml`](contrato/openapi.v1.yaml)
+  (OpenAPI 3.1) y se publica en `/api/openapi`; referencia el contrato de datos por su ubicación
+  en vez de copiarlo, y una prueba comprueba que describe exactamente las rutas de `api/`.
 - **Registro de servicios.** `/api/registro` describe cada servicio: propósito, proveedor, versión,
   ubicación, operaciones y formatos de entrada y salida.
 
@@ -47,6 +50,7 @@ Reglas de normalización comunes: tipo de documento a `CC | CE | NIT | PA | TI`,
 |---|---|---|
 | `POST` | `/api/transformar?origen=ventas\|crm\|facturacion` | `200` cliente canónico · `400` origen desconocido o cuerpo ilegible · `422` no cumple el contrato, con **todos** los errores |
 | `GET` | `/api/contrato` | JSON Schema del Cliente canónico v1 |
+| `GET` | `/api/openapi` | contrato de la interfaz en OpenAPI 3.1 (YAML) |
 | `GET` | `/api/registro` | registro de servicios |
 | `GET` | `/api/salud` | estado del servicio |
 | `GET` | `/api/ejemplos` | mensajes de ejemplo de cada sistema |
@@ -75,7 +79,7 @@ curl -X POST "https://esquema-canonico-soa.vercel.app/api/transformar?origen=crm
 
 ```
 api/          funciones HTTP (una por ruta)
-contrato/     contrato canónico en JSON Schema (fuente de verdad)
+contrato/     contratos: datos en JSON Schema e interfaz en OpenAPI 3.1 (fuente de verdad)
 public/       interfaz web de prueba
 src/
   adaptadores.js   un adaptador por sistema de origen

@@ -1,0 +1,224 @@
+openapi: 3.1.1
+info:
+  title: Servicio de transformación al esquema canónico de Cliente
+  version: 1.0.0
+  summary: Interfaz REST del servicio que aplica Canonical Schema y Decoupled Contract
+  description: |
+    Contrato de la interfaz del servicio de transformación. Describe cada operación HTTP,
+    sus parámetros, los formatos que acepta y las respuestas que produce. El contrato de
+    DATOS (Cliente canónico v1) vive aparte, en JSON Schema, y se referencia desde aquí
+    por su ubicación publicada: así el esquema sigue siendo la única fuente de verdad.
+  license:
+    name: MIT
+    identifier: MIT
+servers:
+  - url: https://esquema-canonico-soa.vercel.app
+    description: Despliegue de demostración
+tags:
+  - name: transformacion
+    description: Conversión de mensajes al esquema canónico
+  - name: contratos
+    description: Contratos publicados aparte de la implementación
+  - name: registro
+    description: Descubrimiento y disponibilidad del servicio
+paths:
+  /api/transformar:
+    post:
+      tags: [transformacion]
+      operationId: transformarCliente
+      summary: Convierte el mensaje propio de un sistema al Cliente canónico v1
+      description: |
+        Recibe el mensaje tal como lo produce el sistema de origen (JSON de Ventas o
+        Facturación, XML del CRM), lo traduce con el adaptador de ese sistema, aplica las
+        reglas de normalización comunes y valida el resultado contra el contrato canónico.
+      parameters:
+        - name: origen
+          in: query
+          required: true
+          description: Sistema que produce el mensaje
+          schema:
+            type: string
+            enum: [ventas, crm, facturacion]
+      requestBody:
+        required: true
+        description: Mensaje en el formato propio del sistema de origen
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Mensaje de Ventas (snake_case) o de Facturación (atributos en inglés)
+            examples:
+              ventas:
+                summary: Cliente enviado por Ventas
+                value:
+                  cliente_id: 7781
+                  tipo_doc: CC
+                  num_doc: 1.020.304.050
+                  nombre: ANA MARIA ROJAS PEREZ
+                  email: Ana.Rojas@example.com
+                  tel: 300 123 4567
+                  fecha_alta: 15/09/2026
+          application/xml:
+            schema:
+              type: string
+              description: Documento <cliente> del CRM, plano, de un nivel
+            example: |
+              <cliente>
+                <id>CRM-0042</id>
+                <documento tipo="cedula">1020304050</documento>
+                <nombres>Ana María</nombres>
+                <apellidos>Rojas Pérez</apellidos>
+                <email>ana.rojas@example.com</email>
+                <creado>2026-09-15</creado>
+              </cliente>
+      responses:
+        '200':
+          description: El cliente en el esquema canónico; cumple el contrato Cliente canónico v1
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClienteCanonicoV1'
+        '400':
+          description: Origen desconocido o mensaje ilegible para ese origen
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDeFormato'
+        '422':
+          description: El mensaje se pudo leer pero no cumple el contrato; trae todos los errores
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDeContrato'
+  /api/contrato:
+    get:
+      tags: [contratos]
+      operationId: obtenerContratoCanonico
+      summary: Publica el contrato de datos Cliente canónico v1 en JSON Schema
+      responses:
+        '200':
+          description: El JSON Schema que usa el validador, sin copias
+          content:
+            application/schema+json:
+              schema:
+                type: object
+  /api/openapi:
+    get:
+      tags: [contratos]
+      operationId: obtenerContratoInterfaz
+      summary: Publica este contrato de la interfaz en OpenAPI 3.1
+      responses:
+        '200':
+          description: Este documento
+          content:
+            application/yaml:
+              schema:
+                type: string
+  /api/registro:
+    get:
+      tags: [registro]
+      operationId: consultarRegistro
+      summary: Registro de servicios con propósito, proveedor, versión, ubicación y operaciones
+      responses:
+        '200':
+          description: Registro de servicios
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Registro'
+  /api/salud:
+    get:
+      tags: [registro]
+      operationId: verificarSalud
+      summary: Disponibilidad del proveedor y versión del contrato en uso
+      responses:
+        '200':
+          description: El servicio está disponible
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [estado, contrato]
+                properties:
+                  estado:
+                    type: string
+                    const: ok
+                  contrato:
+                    type: string
+                    examples: [Cliente canónico v1.0]
+  /api/ejemplos:
+    get:
+      tags: [transformacion]
+      operationId: obtenerEjemplos
+      summary: Mensajes de ejemplo en el formato propio de cada sistema
+      responses:
+        '200':
+          description: Un mensaje de ejemplo por sistema, más uno con errores
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+components:
+  schemas:
+    ClienteCanonicoV1:
+      description: Contrato de datos publicado aparte de la implementación (Decoupled Contract)
+      $ref: https://esquema-canonico-soa.vercel.app/api/contrato
+    ErrorDeFormato:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        origenesValidos:
+          type: array
+          items:
+            type: string
+        formatoEsperado:
+          type: string
+    ErrorDeContrato:
+      type: object
+      required: [error, errores]
+      properties:
+        error:
+          type: string
+          const: no cumple el contrato Cliente canónico v1
+        errores:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [campo, motivo]
+            properties:
+              campo:
+                type: string
+              motivo:
+                type: string
+    Registro:
+      type: object
+      required: [actualizado, servicios]
+      properties:
+        actualizado:
+          type: string
+          format: date
+        servicios:
+          type: array
+          items:
+            type: object
+            required: [nombre, proposito, proveedor, version, ubicacion, operaciones]
+            properties:
+              nombre:
+                type: string
+              proposito:
+                type: string
+              proveedor:
+                type: string
+              version:
+                type: string
+              ubicacion:
+                type: string
+              operaciones:
+                type: array
+                items:
+                  type: object
